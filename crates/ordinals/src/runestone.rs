@@ -254,6 +254,7 @@ mod tests {
     bitcoin::{
       blockdata::locktime::absolute::LockTime, script::PushBytes, Sequence, TxIn, TxOut, Witness,
     },
+    hex::FromHex,
     pretty_assertions::assert_eq,
   };
 
@@ -292,6 +293,40 @@ mod tests {
     payload
   }
 
+  #[test]
+  fn test_decipher_transaction() {
+    //let tx_raw = "020000000001017fb9cc941aa0ca3aaf339783564d2d29ec3254a9128f5d49ad3eeb002aeb40ec0000000000000000000242342a6b000000002251203b8b3ab1453eb47e2d4903b963776680e30863df3625d3e74292338ae7928da10000000000000000246a5d21020704b5e1d8e1c8eeb788a30705a02d039f3e01020680dc9afd2808c7e8430a640340924b2624416402a52ed7cf4eba6b2c535d2def8e649a74ed97aaca5ec54881ef3b34da68bb13d76d6b420e60297a9247cb081d1e59cb2c260b1509cff25d4b3158204c04e894d5357840e324b24c959ca6a5082035f6ffae12f331202bc84bf4612eac0063036f7264010b2047f22ed15d3082f5e9a005864528e4f991ade841a9c5846e2c118425878b6be1010d09b530368c74df10a3036821c04c04e894d5357840e324b24c959ca6a5082035f6ffae12f331202bc84bf4612e00000000";
+    let tx_raw = "02000000000101bd6bbe62d6b95b957db2bcda51fdba15fa4a0f15a9ecac6af2540c698949ddb0000000000005000000031027000000000000225120a9312b6a4f2633ef308046282b1cc4cebe623b42584c53ec85ee8d095d4c8d831027000000000000225120361e463a36ec5b13096b128abe2b11bd5b61cb886b52aff4206318d2a75ad4f000000000000000002d6a5d2a020704828fbac9bc7b01020314052406a08d060a904e085a0ca0f29d010e89fa9d0110e80712a846160103408af29672afb6dcfbb8694f1db7ac29055b0a97b22205a6aa7a9a4690310e9c8efec3826361a1279c4519d2d8ff2bc43f0572d66f54bbab871fe95155a2d335f57320242158e7cd1e81ae274b5996b72e5fe3bad33c715e684f93e29266e370587bbdac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d38010200010519a166617574686f72705361746f736869204e616b616d6f746f010d0682872ec9db030005555855590a6821c1242158e7cd1e81ae274b5996b72e5fe3bad33c715e684f93e29266e370587bbd00000000";
+    let raw_tx = hex::decode(tx_raw).unwrap();
+    let tx: Transaction =
+      Decodable::consensus_decode(&mut raw_tx.as_slice()).expect("failed to decode transaction");
+
+    let Some(artifact) = Runestone::decipher(&tx) else {
+      println!("failed to decipher transaction ");
+      return;
+    };
+    println!("artifact: {:?}", artifact);
+  }
+
+  #[test]
+  fn test_payload() {
+    let tx_raw = "020000000001010524ce296bb611f135812f67edc6660db0849e9506f62d07fa980d22deef40980000000000f5ffffff03102700000000000022512003fe4156899a8f727e5272155523c3befaf1122ee8d6237bdf9fdde740035f25e80300000000000022512003fe4156899a8f727e5272155523c3befaf1122ee8d6237bdf9fdde740035f250000000000000000306a5d2d020704aee8bebeb8aed3aff0ee1301020344054d06a08d060a904e085a0ce0fa9d010ec8829e01100a125a16010340b5a1a4e8b1691eddf44f5c8b0d0acb708f6df3daa5a020b92859947170ca771320e2bc15be1d85407d072462f9dd8019b581b3a56fbfba23679ce5695a3d71773720f23755fcb6b5b789c67ea897248a1b5c5f9d91867556c9d7c56d574dac8e4c96ac0063036f726401010a696d6167652f77656270006821c0f23755fcb6b5b789c67ea897248a1b5c5f9d91867556c9d7c56d574dac8e4c9600000000";
+    let raw_tx = hex::decode(tx_raw).unwrap();
+    let tx: Transaction =
+      Decodable::consensus_decode(&mut raw_tx.as_slice()).expect("failed to decode transaction");
+    let payload = match Runestone::payload(&tx) {
+      Some(Payload::Valid(payload)) => payload,
+      Some(Payload::Invalid(flaw)) => {
+        println!("flaw : {:?}", flaw);
+        return;
+      }
+      None => return,
+    };
+    println!("payload : {:?}", payload);
+  }
+
+  #[test]
+  fn test_decipher_payload() {}
   #[test]
   fn decipher_returns_none_if_first_opcode_is_malformed() {
     assert_eq!(

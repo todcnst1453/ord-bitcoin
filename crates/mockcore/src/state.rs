@@ -1,9 +1,10 @@
 use {
   super::*,
   bitcoin::{
+    consensus::Encodable,
     key::{KeyPair, Secp256k1, XOnlyPublicKey},
     secp256k1::rand,
-    WPubkeyHash,
+    Transaction, WPubkeyHash,
   },
 };
 
@@ -255,7 +256,9 @@ impl State {
     }
 
     let txid = tx.txid();
-
+    let mut buf = [0u8; 1024];
+    let size = tx.consensus_encode(&mut &mut buf[..]).unwrap();
+    println!("tx_raw: {}", hex::encode(&buf[..size]));
     self.mempool.push(tx);
 
     txid
