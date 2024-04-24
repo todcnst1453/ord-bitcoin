@@ -489,3 +489,88 @@ impl<'a, 'tx, 'client> RuneUpdater<'a, 'tx, 'client> {
     Ok(unallocated)
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use {
+    super::*,
+    bitcoin::{
+      blockdata::locktime::absolute::LockTime, script::PushBytes, Sequence, TxIn, TxOut, Witness,
+    },
+    hex::FromHex,
+    pretty_assertions::assert_eq,
+  };
+  fn etched(
+    tx_index: u32,
+    tx: &Transaction,
+    artifact: &Artifact,
+  ) -> Result<Option<(RuneId, Rune)>> {
+    let rune = match artifact {
+      Artifact::Runestone(runestone) => match runestone.etching {
+        Some(etching) => etching.rune,
+        None => return Ok(None),
+      },
+      Artifact::Cenotaph(cenotaph) => match cenotaph.etching {
+        Some(rune) => Some(rune),
+        None => return Ok(None),
+      },
+    };
+
+    let rune = if let Some(rune) = rune {
+      // if rune < self.minimum
+      //   || rune.is_reserved()
+      //   || self.rune_to_id.get(rune.0)?.is_some()
+      //   || !self.tx_commits_to_rune(tx, rune)?
+      // {
+      //   return Ok(None);
+      // }
+      println!("rune.0 {:?}", rune.0);
+      rune
+    } else {
+      // let reserved_runes = self
+      //   .statistic_to_count
+      //   .get(&Statistic::ReservedRunes.into())?
+      //   .map(|entry| entry.value())
+      //   .unwrap_or_default();
+
+      // self
+      //   .statistic_to_count
+      //   .insert(&Statistic::ReservedRunes.into(), reserved_runes + 1)?;
+
+      // Rune::reserved(self.height.into(), tx_index)
+      return Ok(None);
+    };
+
+    Ok(Some((
+      RuneId {
+        block: 10000000,
+        tx: tx_index,
+      },
+      rune,
+    )))
+  }
+  #[test]
+  fn test_runes() {
+    //let tx_raw = "02000000000101331645079441885ec6770c5f3599d4c27e38aabf7c7d4193622fee0f8e3f46be000000000006000000023930000000000000225120f42c4b5abaf449434c7c2a7b6ba06fdcd588e984db259dc03a1755f941d35f60000000000000000236a5d20020304d4b0eee29298f9a9880505520ae80708d086030ce6e49d010eeeb29e010340d27187ae729760030ff1fdacb8d274eed8ae60d9febc7b4804240d75b96d3619783c406fe34fe50a7853315861af9f2266121b9f2651531957386f913a1d2a275c2044792e9a08cde380333ddb5e5661f0b9d36c3a6e897d5c9f16389624e777de0dac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d38010200010d0954985b2cc1e4538802000752554e454f4e456821c144792e9a08cde380333ddb5e5661f0b9d36c3a6e897d5c9f16389624e777de0d00000000";
+    let tx_raw = "020000000001019cf38d0b9d205598fbf2f8213f388f2b73975dde2258e60c5f62a6e6608b7f820000000000f5ffffff025d4a1e00000000002251207ec033c709223053d05ea4fee7eb1c489f086ffc499514e34d6c00beffdc952f00000000000000002f6a5d2c020704c2bbf89fbdd5a5e4e66101020344054d06a08d060a904e085a0ce0fa9d010ec8829e01100a125a16010140e55876398b7df190eddbc219eb363fab152b62d6a3bb475e306ca206615addbe29a49a6ae2bfff681464af75f0b2d5b2c396cb4f63c763c6b528e6291c8e2d4000000000";
+    //let tx_raw = "020000000001017fb9cc941aa0ca3aaf339783564d2d29ec3254a9128f5d49ad3eeb002aeb40ec0000000000000000000242342a6b000000002251203b8b3ab1453eb47e2d4903b963776680e30863df3625d3e74292338ae7928da10000000000000000246a5d21020704b5e1d8e1c8eeb788a30705a02d039f3e01020680dc9afd2808c7e8430a640340924b2624416402a52ed7cf4eba6b2c535d2def8e649a74ed97aaca5ec54881ef3b34da68bb13d76d6b420e60297a9247cb081d1e59cb2c260b1509cff25d4b3158204c04e894d5357840e324b24c959ca6a5082035f6ffae12f331202bc84bf4612eac0063036f7264010b2047f22ed15d3082f5e9a005864528e4f991ade841a9c5846e2c118425878b6be1010d09b530368c74df10a3036821c04c04e894d5357840e324b24c959ca6a5082035f6ffae12f331202bc84bf4612e00000000";
+    let raw_tx = hex::decode(tx_raw).unwrap();
+    let tx: Transaction =
+      Decodable::consensus_decode(&mut raw_tx.as_slice()).expect("failed to decode transaction");
+    let artifact = Runestone::decipher(&tx).unwrap();
+    println!("artifact: {:?}", artifact);
+    let rune = match artifact {
+      Artifact::Runestone(runestone) => match runestone.etching {
+        Some(etching) => etching.rune,
+        None => return,
+      },
+      Artifact::Cenotaph(cenotaph) => match cenotaph.etching {
+        Some(rune) => Some(rune),
+        None => return,
+      },
+    };
+    println!("name: {}", rune.unwrap().to_string());
+    // let res = etched(0, &tx, &artifact);
+    // println!("res: {:?}", res);
+  }
+}
